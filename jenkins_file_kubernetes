@@ -1,20 +1,90 @@
 pipeline {
     agent any
-
+    
+    
     stages {
-         stage('Checkout') {
+        stage('Checkout') { // Servira para hacer la conexión con nuestro remote repo
             steps {
-                git branch: 'deploy',url: 'https://github.com/espinoza6006/myInsuranceApp.git'
+                git branch: 'develop',url: 'https://github.com/espinoza6006/myInsuranceApp.git'
+	        }
+        }        
+        stage('Requirements') { // Stage para realizar e instalar las dependecnias e inicializar el database
+            steps {
+                echo 'Installing dependencies...'
+                sh 'pip3 install -r requirements.txt'
+                sh 'python3 project/init/init_db.py'
             }
-        }  
-        stage('Exexuting kubectl') {
+        }
+        stage('Unit/Integration tests') { // Verificar pruebas unitarias
+           steps {
+                echo 'Unit/Integration...'
+                sh 'python3 -m unittest discover -s tests/unit -v'
+            }
+        }       
+       stage('Acceptance tests') { // 
+            steps {
+                echo 'Acceptance...'
+                sh 'python3 -m unittest discover -s tests/acceptance-flask/ -v'
+            }
+        }
+        stage('Create image') { //Creando Imagen debemos ir a dockerhub y crear un nuevo repo.. Colocamos en nombre del repo.. 
+                                //cuando hemos creado el repo en dockerhub nos saldra el nombre de la imagen en el lado derecho en color negro 
+                                //   
+            steps {
+                echo 'creating image...'
+                sh 'docker build -t espinoza6006/myinsuranceapp:v1 -f dockerFile .'
+            } // donde espinoza6006 sera el nombre usuario en dockerhub
+              // myinsuranceapp:v1 es el nombre de la imagen que voy a crear.. en formato nombreImageN:TAG
+              // dockerFile es el nombre del dockerFile creado en el develop branch
+              
+        } 
+        stage('Publish image') {  // Para publicar una imagen de deben tener credenciales en jenkins 
+            /* Para ello debemos ir a jenkis y en manage jenkis vamos a credenciales global y add credentiales
+               en kind: username with password.
+               scope: global.
+               username: Coloco el username de Duckerhub: espinoza6006
+               password: espinoza6006 en dockerhub. --> l308...... 
+               ID: Seria el nombre del credencial  docker-hub-credentials
+               y automaticamente en jenkis se correra la actualizacion si hago push en github
+                                 */
+            steps {
+                echo 'pushing image...'
+                withDockerRegistry([ credentialsId: "docker-hub-credentials", url: "" ]) {
+                    sh 'docker push espinoza6006/myinsuranceapp:v1'
+                }
+            }
+        } 
+
+            stage('Exexuting kubectl') {
             steps {
                 echo 'Exexuting kubectl'
                 withKubeConfig([credentialsId: 'k8-credentials']) {
-                    sh 'kubectl apply -f kubernetes/1_insurance_app_test_deployment.yaml'
-                    sh 'kubectl apply -f kubernetes/2_insurance_app_service.yaml'
+                    sh 'kubectl apply -f kubernetes/1-myinsuranceapp-v1-deployment.yaml'
+                    sh 'kubectl apply -f kubernetes/2-myinsuranceapp-v1-service.yaml'
                 }
             }
         }
+    
+
+        post {
+        always {
+            echo 'post do this always...'
+        }
+        success{
+            echo 'post do this when success...'
+        }
+        failure {
+            echo 'post do this when failure...'
+        }
+        cleanup{
+            echo 'post do this when cleanup...'
+            deleteDir()
+        }
     }
 }
+
+
+
+
+
+
