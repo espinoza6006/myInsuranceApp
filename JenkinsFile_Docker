@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+    
+    
+    stages {
+        stage('Checkout') { // Servira para hacer la conexión con nuestro remote repo
+            steps {
+                git branch: 'develop',url: 'https://github.com/espinoza6006/myInsuranceApp.git'
+	        }
+        }        
+        stage('Requirements') { // Stage para realizar e instalar las dependecnias e inicializar el database
+            steps {
+                echo 'Installing dependencies...'
+                sh 'pip3 install -r requirements.txt'
+                sh 'python3 project/init/init_db.py'
+            }
+        }
+        stage('Unit/Integration tests') { // Verificar pruebas unitarias
+           steps {
+                echo 'Unit/Integration...'
+                sh 'python3 -m unittest discover -s tests/unit -v'
+            }
+        }       
+       stage('Acceptance tests') { // 
+            steps {
+                echo 'Acceptance...'
+                sh 'python3 -m unittest discover -s tests/acceptance-flask/ -v'
+            }
+        }
+        stage('Create image') { //Creando Imagen
+            steps {
+                echo 'creating image...'
+                sh 'docker build -t myinsuranceapp/myinsuranceapp:v1 -f dockerFile .'
+            } // donde myinsuranceapp sera el nombre del repo en dockerhub creado 
+              // myinsuranceapp:v1 es el nombre de la imagen que voy a crear.. en formato nombreImageN:TAG
+              // dockerFile es el nombre del dockerFile creado en el develop branch
+              
+        } 
+        stage('Publish image') {
+            steps {
+                echo 'pushing image...'
+                withDockerRegistry([ credentialsId: "docker-hub-credentials", url: "" ]) {
+                    sh 'docker push myinsuranceapp/myinsuranceapp:v1'
+                }
+            }
+        } 
+    }
+    post {
+        always {
+            echo 'post do this always...'
+        }
+        success{
+            echo 'post do this when success...'
+        }
+        failure {
+            echo 'post do this when failure...'
+        }
+        cleanup{
+            echo 'post do this when cleanup...'
+            deleteDir()
+        }
+    }
+}
