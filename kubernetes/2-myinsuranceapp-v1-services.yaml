@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pmyinsuranceapp-service
+  labels:
+    app: myinsuranceapp
+spec:
+  selector:
+    app: myinsuranceapp
+  type: NodePort
+  ports:
+  - port: 8089
+    targetPort: http
+    nodePort: 30163 #30000-32767
+    protocol: TCP
+    name: http

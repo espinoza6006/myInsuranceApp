@@ -1,0 +1,5 @@
+resources:
+  - 1-myinsuranceapp-v1-deployment.yaml
+  - 2-myinsuranceapp-v1-service.yaml
+  - 3-myinsuranceapp-az-deployment.yaml
+  - 4-myinsuranceapp-az-service.yaml
