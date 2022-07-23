@@ -59,8 +59,8 @@ pipeline {
             steps {
                 echo 'Exexuting kubectl'
                 withKubeConfig([credentialsId: 'k8-credentials']) {
-                    sh 'kubectl apply -f kubernetes/1-myinsuranceapp-v1-deployment.yaml'
-                    sh 'kubectl apply -f kubernetes/2-myinsuranceapp-v1-services.yaml'
+                    sh 'kubectl apply -f myinsuranceapp-v1/kubernetes/1-myinsuranceapp-v1-deployment.yaml'
+                    sh 'kubectl apply -f myinsuranceapp-v1/kubernetes/2-myinsuranceapp-v1-services.yaml'
                 }
             }
         }
