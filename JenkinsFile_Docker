@@ -45,6 +45,7 @@ pipeline {
                username: Coloco el username de Duckerhub: espinoza6006
                password: espinoza6006 en dockerhub. --> l308...... 
                ID: Seria el nombre del credencial  docker-hub-credentials
+               y automaticamente en jenkis se correra la actualizacion si hago push en github
                                  */
             steps {
                 echo 'pushing image...'
